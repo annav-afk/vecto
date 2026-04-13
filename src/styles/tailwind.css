@@ -1,0 +1,74 @@
+@import 'tailwindcss' source(none);
+@source '../**/*.{js,ts,jsx,tsx}';
+
+@import 'tw-animate-css';
+
+/* Range input custom styling */
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #1d4ed8;
+  cursor: pointer;
+  border: 2px solid #06060f;
+  box-shadow: 0 0 0 1px #1d4ed8;
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #1d4ed8;
+  cursor: pointer;
+  border: 2px solid #06060f;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* Background gradient utility */
+.bg-gradient-radial {
+  background: radial-gradient(ellipse at center, var(--tw-gradient-stops));
+}
+
+/* ── Dynamic viewport height utilities ──────────────────────────────────────
+   Uses --dvh set by useMobileViewport() in App.tsx for perfect iOS support.
+   Fallback: 100dvh (modern browsers), then 100vh.
+   ───────────────────────────────────────────────────────────────────────── */
+.h-dvh {
+  height: 100vh;
+  height: 100dvh;
+  height: calc(var(--dvh, 1dvh) * 100);
+}
+.min-h-dvh {
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: calc(var(--dvh, 1dvh) * 100);
+}
+
+/* Override Tailwind's built-in screen utilities with stable dvh */
+.min-h-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: calc(var(--dvh, 1dvh) * 100);
+}
+.h-screen {
+  height: 100vh;
+  height: 100dvh;
+  height: calc(var(--dvh, 1dvh) * 100);
+}
+
+/* ── Safe-area inset helpers (iPhone notch / home indicator) ─────────────── */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+}
