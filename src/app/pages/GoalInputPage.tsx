@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -43,7 +43,8 @@ function useAnimatedPlaceholder(active: boolean) {
     const full = ROTATING_PLACEHOLDERS[idx];
     if (phase === 'typing') {
       if (text.length < full.length) {
-        timerRef.current = setTimeout(() => setText(full.slice(0, text.length + 1)), 38);
+        // Увеличен интервал с 38мс до 80мс для снижения нагрузки
+        timerRef.current = setTimeout(() => setText(full.slice(0, text.length + 1)), 80);
       } else {
         timerRef.current = setTimeout(() => setPhase('pause'), 2000);
       }
@@ -51,7 +52,8 @@ function useAnimatedPlaceholder(active: boolean) {
       timerRef.current = setTimeout(() => setPhase('erasing'), 500);
     } else {
       if (text.length > 0) {
-        timerRef.current = setTimeout(() => setText(t => t.slice(0, -1)), 18);
+        // Увеличен интервал с 18мс до 50мс
+        timerRef.current = setTimeout(() => setText(t => t.slice(0, -1)), 50);
       } else {
         setIdx(i => (i + 1) % ROTATING_PLACEHOLDERS.length);
         setPhase('typing');
@@ -128,10 +130,22 @@ export function GoalInputPage() {
   const usage          = getMonthlyUsage();
   const planLimit      = getPlanLimit(tier);
   const isLimitReached = usage >= planLimit;
-  const animPlaceholder = useAnimatedPlaceholder(step === 'details' && goal === '');
+  // Отключено для производительности - вызывало лаги при скролле
+  // const animPlaceholder = useAnimatedPlaceholder(step === 'details' && goal === '');
+  const animPlaceholder = '';
   const charCount      = goal.length;
   const charMax        = 600;
   const charGood       = charCount >= 20;
+
+  // Мемоизация расчёта времени для избежания лишних вычислений
+  const timeCalculation = useMemo(() => {
+    if (!goal || !deadline || !hoursPerWeek) return null;
+    const deadlineDate = new Date(deadline);
+    const today = new Date();
+    const totalDays = Math.ceil((deadlineDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+    const totalHours = Math.floor(totalDays * (hoursPerWeek / 7));
+    return { totalDays, totalHours };
+  }, [goal, deadline, hoursPerWeek]);
 
   const applyTemplate = (tmpl: Template) => {
     setGoal(tmpl.goal); setDeadline(tmpl.deadline); setHoursPerWeek(tmpl.hoursPerWeek);
@@ -232,7 +246,7 @@ export function GoalInputPage() {
   };
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif" }} className="min-h-screen text-slate-900 dark:text-white flex flex-col">
+    <div style={{ fontFamily: "'Inter', sans-serif" }} className="h-screen lg:min-h-screen text-slate-900 dark:text-white flex flex-col">
 
       {/* ── Background ── */}
       <div className="fixed inset-0 -z-10"
@@ -269,7 +283,7 @@ export function GoalInputPage() {
       </nav>
 
       {/* ── Body ── */}
-      <div className="flex-1 flex flex-col lg:flex-row">
+      <div className="flex-1 flex flex-col lg:flex-row lg:h-0">
         <AnimatePresence mode="wait">
 
           {/* ════════════════════════════════════════════════════════════
@@ -281,9 +295,9 @@ export function GoalInputPage() {
 
               {/* ── LEFT: Form ─────────────────────────────────────────── */}
               <div className="flex-1 overflow-y-auto px-5 sm:px-8 lg:px-16 xl:px-24
-                              py-8 lg:py-12 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))] lg:pb-12">
-                <div className="w-full max-w-xl mx-auto lg:mx-0 flex items-start lg:items-center min-h-full">
-                  <div className="w-full">
+                              py-8 lg:py-12 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))] lg:pb-12"
+                   style={{ WebkitOverflowScrolling: 'touch' }}>
+                <div className="w-full max-w-xl mx-auto lg:mx-0">
 
                     {/* Badge */}
                     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
@@ -425,24 +439,18 @@ export function GoalInputPage() {
                       </div>
 
                       {/* AI Time Calculation Info */}
-                      {goal && deadline && hoursPerWeek && (() => {
-                        const deadlineDate = new Date(deadline);
-                        const today = new Date();
-                        const totalDays = Math.ceil((deadlineDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-                        const totalHours = Math.floor(totalDays * (hoursPerWeek / 7));
-                        return (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="flex items-center gap-2.5 p-3 rounded-xl bg-[#1d4ed8]/8 border border-[#1d4ed8]/20 text-[#1d4ed8] text-xs"
-                          >
-                            <Brain className="w-4 h-4 shrink-0" />
-                            <span>
-                              AI рассчитает план на <strong>{totalDays} дней</strong> с доступными <strong>{totalHours} часами</strong>
-                            </span>
-                          </motion.div>
-                        );
-                      })()}
+                      {timeCalculation && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="flex items-center gap-2.5 p-3 rounded-xl bg-[#1d4ed8]/8 border border-[#1d4ed8]/20 text-[#1d4ed8] text-xs"
+                        >
+                          <Brain className="w-4 h-4 shrink-0" />
+                          <span>
+                            AI рассчитает план на <strong>{timeCalculation.totalDays} дней</strong> с доступными <strong>{timeCalculation.totalHours} часами</strong>
+                          </span>
+                        </motion.div>
+                      )}
 
                       {/* ── AI Deadline Validation ── */}
                       <DeadlineValidator
@@ -483,12 +491,11 @@ export function GoalInputPage() {
                       </p>
                     </motion.div>
                   </div>
-                </div>
               </div>
 
               {/* ── RIGHT: Desktop Preview Panel ───────────────────────── */}
               <div className="hidden lg:flex w-[480px] xl:w-[520px] shrink-0 border-l border-[#1d4ed8]/08 flex-col overflow-y-auto"
-                style={{ background: 'rgba(240,244,255,0.6)', backdropFilter: 'blur(24px)' }}>
+                style={{ background: 'rgba(240,244,255,0.6)', backdropFilter: 'blur(24px)', WebkitOverflowScrolling: 'touch' }}>
 
                 {/* Tomi hero */}
                 <div className="flex-1 flex flex-col justify-center px-10 xl:px-14 py-12">
@@ -571,7 +578,8 @@ export function GoalInputPage() {
           {step === 'clarifying' && (
             <motion.div key="clarifying"
               initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
-              className="flex-1 overflow-y-auto px-5 sm:px-8 lg:px-16 xl:px-24 py-8 lg:py-12 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))] lg:pb-12">
+              className="flex-1 overflow-y-auto px-5 sm:px-8 lg:px-16 xl:px-24 py-8 lg:py-12 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))] lg:pb-12"
+              style={{ WebkitOverflowScrolling: 'touch' }}>
               <div className="w-full max-w-xl mx-auto">
 
                 {/* Tomi avatar + comment */}
