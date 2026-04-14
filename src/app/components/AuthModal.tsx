@@ -35,7 +35,9 @@ function saveCreds(username: string, password: string) {
 }
 
 function clearCreds() {
-  localStorage.removeItem(REMEMBER_KEY);
+  try {
+    localStorage.removeItem(REMEMBER_KEY);
+  } catch { /* ignore */ }
 }
 
 function loadCreds(): { username: string; password: string } | null {

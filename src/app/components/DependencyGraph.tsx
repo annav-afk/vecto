@@ -80,7 +80,7 @@ export function DependencyGraph({ plan, onTaskClick, onClose }: Props) {
     return set;
   }, [hoveredId, edges]);
 
-  // Pan handlers
+  // Pan handlers (mouse & touch)
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.target === containerRef.current || (e.target as HTMLElement).tagName === 'svg') {
       dragging.current = true;
@@ -93,6 +93,20 @@ export function DependencyGraph({ plan, onTaskClick, onClose }: Props) {
     lastMouse.current = { x: e.clientX, y: e.clientY };
   };
   const handleMouseUp = () => { dragging.current = false; };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      dragging.current = true;
+      lastMouse.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!dragging.current || e.touches.length !== 1) return;
+    e.preventDefault();
+    setPan(p => ({ x: p.x + e.touches[0].clientX - lastMouse.current.x, y: p.y + e.touches[0].clientY - lastMouse.current.y }));
+    lastMouse.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+  const handleTouchEnd = () => { dragging.current = false; };
 
   const totalW = Math.max(...nodes.map(n => n.x + 220), 600);
   const totalH = Math.max(...nodes.map(n => n.y + 100), 400);
@@ -150,6 +164,9 @@ export function DependencyGraph({ plan, onTaskClick, onClose }: Props) {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           {!hasDeps ? (
             <div className="flex flex-col items-center justify-center h-full text-center p-6">

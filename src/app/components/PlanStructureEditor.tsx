@@ -11,6 +11,11 @@ import { TomiAvatar } from './TomiAssistant';
 
 const SERVER = `https://${projectId}.supabase.co/functions/v1/make-server-a5927615`;
 
+// Определение touch устройства
+function isTouchDevice() {
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+}
+
 interface Props {
   plan: Plan;
   onApply: (updated: Plan) => void;
@@ -28,6 +33,7 @@ export function PlanStructureEditor({ plan, onApply, onClose }: Props) {
   const [editingName, setEditingName] = useState<number | null>(null);
   const [taskDrag, setTaskDrag] = useState<{ phaseIdx: number; taskIdx: number } | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const isTouch = isTouchDevice();
 
   const movePhase = (from: number, to: number) => {
     const next = [...phases];
@@ -198,15 +204,15 @@ export function PlanStructureEditor({ plan, onApply, onClose }: Props) {
               className={`rounded-xl border transition-all ${
                 overIdx === idx ? 'border-[#1d4ed8] bg-[#1d4ed8]/5' : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5'
               }`}
-              draggable
-              onDragStart={() => setDragIdx(idx)}
-              onDragOver={e => { e.preventDefault(); setOverIdx(idx); }}
-              onDragLeave={() => setOverIdx(null)}
-              onDrop={() => {
+              draggable={!isTouch}
+              onDragStart={!isTouch ? () => setDragIdx(idx) : undefined}
+              onDragOver={!isTouch ? (e => { e.preventDefault(); setOverIdx(idx); }) : undefined}
+              onDragLeave={!isTouch ? (() => setOverIdx(null)) : undefined}
+              onDrop={!isTouch ? (() => {
                 if (dragIdx !== null && dragIdx !== idx) movePhase(dragIdx, idx);
                 setDragIdx(null); setOverIdx(null);
-              }}
-              onDragEnd={() => { setDragIdx(null); setOverIdx(null); }}
+              }) : undefined}
+              onDragEnd={!isTouch ? (() => { setDragIdx(null); setOverIdx(null); }) : undefined}
             >
               {/* Phase header */}
               <div className="flex items-center gap-2 px-3 py-2.5">
@@ -275,20 +281,20 @@ export function PlanStructureEditor({ plan, onApply, onClose }: Props) {
                 {phase.tasks.map((task, tIdx) => (
                   <div
                     key={task.id}
-                    className="flex items-center gap-2 py-1 px-2 rounded-lg text-xs text-slate-600 dark:text-white/60 hover:bg-white dark:hover:bg-white/5 cursor-grab transition-all group"
-                    draggable
-                    onDragStart={e => {
+                    className={`flex items-center gap-2 py-1 px-2 rounded-lg text-xs text-slate-600 dark:text-white/60 hover:bg-white dark:hover:bg-white/5 ${!isTouch ? 'cursor-grab' : ''} transition-all group`}
+                    draggable={!isTouch}
+                    onDragStart={!isTouch ? (e => {
                       e.stopPropagation();
                       setTaskDrag({ phaseIdx: idx, taskIdx: tIdx });
-                    }}
-                    onDragOver={e => e.preventDefault()}
-                    onDrop={e => {
+                    }) : undefined}
+                    onDragOver={!isTouch ? (e => e.preventDefault()) : undefined}
+                    onDrop={!isTouch ? (e => {
                       e.stopPropagation();
                       if (taskDrag && taskDrag.phaseIdx !== idx) {
                         moveTaskBetweenPhases(taskDrag.phaseIdx, taskDrag.taskIdx, idx);
                       }
                       setTaskDrag(null);
-                    }}
+                    }) : undefined}
                   >
                     <GripVertical className="w-3 h-3 text-slate-300 dark:text-white/15 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                     <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{

@@ -23,19 +23,28 @@ export function getPlanById(id: string): Plan | null {
 }
 
 export function savePlan(plan: Plan): void {
-  const plans = getPlans();
-  const existing = plans.findIndex(p => p.id === plan.id);
-  if (existing >= 0) {
-    plans[existing] = plan;
-  } else {
-    plans.unshift(plan);
+  try {
+    const plans = getPlans();
+    const existing = plans.findIndex(p => p.id === plan.id);
+    if (existing >= 0) {
+      plans[existing] = plan;
+    } else {
+      plans.unshift(plan);
+    }
+    localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+  } catch (err) {
+    console.warn('[Storage] Failed to save plan:', err);
+    throw err; // re-throw so caller knows it failed
   }
-  localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
 }
 
 export function deletePlan(id: string): void {
-  const plans = getPlans().filter(p => p.id !== id);
-  localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+  try {
+    const plans = getPlans().filter(p => p.id !== id);
+    localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+  } catch (err) {
+    console.warn('[Storage] Failed to delete plan:', err);
+  }
 }
 
 export function updateTask(planId: string, taskId: string, updates: Partial<Task>): Plan | null {
@@ -68,9 +77,13 @@ export function getMonthlyUsage(): number {
 }
 
 export function incrementUsage(): void {
-  const currentMonth = new Date().toISOString().slice(0, 7);
-  const count = getMonthlyUsage() + 1;
-  localStorage.setItem(USAGE_KEY, JSON.stringify({ month: currentMonth, count }));
-  // Also push usage to cloud settings for cross-device
-  updateSetting('usage', { month: currentMonth, count });
+  try {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const count = getMonthlyUsage() + 1;
+    localStorage.setItem(USAGE_KEY, JSON.stringify({ month: currentMonth, count }));
+    // Also push usage to cloud settings for cross-device
+    updateSetting('usage', { month: currentMonth, count });
+  } catch (err) {
+    console.warn('[Storage] Failed to increment usage:', err);
+  }
 }
