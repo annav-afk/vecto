@@ -269,7 +269,7 @@ export function GoalInputPage() {
       </nav>
 
       {/* ── Body ── */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row">
         <AnimatePresence mode="wait">
 
           {/* ════════════════════════════════════════════════════════════
@@ -277,7 +277,7 @@ export function GoalInputPage() {
           ════════════════════════════════════════════════════════════ */}
           {step === 'details' && (
             <motion.div key="details" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -30 }}
-              className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+              className="flex-1 flex flex-col lg:flex-row">
 
               {/* ── LEFT: Form ─────────────────────────────────────────── */}
               <div className="flex-1 overflow-y-auto px-5 sm:px-8 lg:px-16 xl:px-24
